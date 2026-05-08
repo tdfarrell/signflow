@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignFlow — Immersive ASL</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0e0e12;--ink2:#1c1c24;--ink3:#2a2a38;--line:#333344;--fog:#888899;--mist:#bbbbc8;--gold:#c9a84c;--gold2:#e8c96d;--teal:#2ec4b6;--rose:#e05c6e;--text:#f0f0f8;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ink);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden}
+.shell{display:grid;grid-template-columns:72px 1fr;min-height:100vh}
+.sidebar{background:var(--ink2);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;position:sticky;top:0;height:100vh}
+.logo-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);margin-bottom:12px;font-style:italic;flex-shrink:0}
+.nav-item{width:48px;height:48px;border-radius:12px;border:none;background:none;color:var(--fog);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:all .2s;font-size:.55rem;letter-spacing:.02em;font-family:'Outfit',sans-serif;text-transform:uppercase}
+.nav-item:hover{background:var(--ink3);color:var(--mist)}
+.nav-item.active{background:rgba(201,168,76,.12);color:var(--gold)}
+.nav-item svg{width:20px;height:20px;flex-shrink:0}
+.nav-spacer{flex:1}
+.xp-pill{background:var(--ink3);border:1px solid var(--line);border-radius:20px;padding:6px 0;width:52px;text-align:center;font-size:.7rem;color:var(--gold);font-weight:600;margin-bottom:8px}
+.main{overflow-y:auto;height:100vh}
+.page{display:none;padding:36px 40px;max-width:1100px;animation:rise .3s ease}
+.page.active{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.serif{font-family:'Instrument Serif',serif}
+.h1{font-family:'Instrument Serif',serif;font-size:2.6rem;line-height:1.15;margin-bottom:.4em}
+.h1 i{color:var(--gold);font-style:italic}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--fog);font-weight:600}
+.muted{color:var(--fog)}
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r)}
+.card-hover{transition:all .2s;cursor:pointer}
+.card-hover:hover{border-color:var(--gold);transform:translateY(-2px)}
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:10px 22px;font-family:'Outfit',sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s}
+.btn-gold{background:var(--gold);color:var(--ink)}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn-ghost{background:var(--ink3);border:1px solid var(--line);color:var(--text)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:7px 16px;font-size:.82rem}
+.pbar{background:var(--ink3);height:5px;border-radius:3px;overflow:hidden}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .6s ease}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.03em}
+.tag-gold{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3)}
+.tag-teal{background:rgba(46,196,182,.15);color:var(--teal);border:1px solid rgba(46,196,182,.3)}
+.tag-rose{background:rgba(224,92,110,.15);color:var(--rose);border:1px solid rgba(224,92,110,.3)}
+.tag-fog{background:var(--ink3);color:var(--fog);border:1px solid var(--line)}
+
+/* HOME */
+.home-hero{display:grid;grid-template-columns:1fr 320px;gap:32px;margin-bottom:36px;align-items:center}
+.hero-right{display:flex;flex-direction:column;gap:12px}
+.streak-card{background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.25);border-radius:var(--r);padding:22px;text-align:center}
+.streak-num{font-family:'Instrument Serif',serif;font-size:3rem;color:var(--gold)}
+.stats-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-mini{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.stat-mini .val{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--teal)}
+.modules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.module-card{padding:22px;position:relative;overflow:hidden}
+.module-card::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;opacity:.06;background:var(--mc,var(--gold))}
+.module-num{font-family:'Instrument Serif',serif;font-size:2.2rem;color:var(--mc,var(--gold));opacity:.25;position:absolute;top:12px;right:16px}
+.module-icon{font-size:1.5rem;margin-bottom:9px;display:block}
+.module-title{font-weight:700;font-size:.92rem;margin-bottom:4px}
+.module-sub{font-size:.78rem;color:var(--fog);margin-bottom:12px;line-height:1.5}
+.daily-banner{background:linear-gradient(135deg,var(--ink2),var(--ink3));border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.banner-icon{font-size:1.6rem;flex-shrink:0}
+.banner-text{font-size:.87rem;color:var(--mist);line-height:1.6}
+.banner-text strong{color:var(--text)}
+
+/* DRILLS */
+.drill-card{padding:36px;text-align:center;margin-bottom:20px;min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.drill-sequence{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0}
+.sign-frame{display:flex;flex-direction:column;align-items:center;gap:5px}
+.sign-img-box{width:88px;height:88px;background:rgba(255,255,255,.04);border-radius:12px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sign-img-box img{width:74px;height:74px;object-fit:contain;filter:invert(1) brightness(.9)}
+.sign-pos{font-size:.68rem;color:var(--fog);font-weight:600;letter-spacing:.05em}
+.drill-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.drill-choice{background:var(--ink2);border:2px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;font-size:.95rem;font-weight:600;transition:all .2s;text-align:left;color:var(--text)}
+.drill-choice:hover:not(:disabled){border-color:var(--gold);background:rgba(201,168,76,.06)}
+.drill-choice.correct{border-color:var(--teal)!important;background:rgba(46,196,182,.08)!important;color:var(--teal)}
+.drill-choice.wrong{border-color:var(--rose)!important;background:rgba(224,92,110,.08)!important;color:var(--rose)}
+.feedback-bar{padding:13px 16px;border-radius:10px;font-size:.88rem;margin-top:12px;display:none}
+.feedback-bar.show{display:block}
+.feedback-bar.ok{background:rgba(46,196,182,.1);color:var(--teal);border:1px solid rgba(46,196,182,.2)}
+.feedback-bar.bad{background:rgba(224,92,110,.1);color:var(--rose);border:1px solid rgba(224,92,110,.2)}
+.feedback-bar.info{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.2)}
+
+/* GRAMMAR */
+.grammar-tabs{display:flex;gap:8px;margin-bottom:26px;flex-wrap:wrap}
+.gtab{padding:7px 16px;border-radius:8px;border:1px solid var(--line);background:none;color:var(--fog);cursor:pointer;font-family:'Outfit',sans-serif;font-size:.83rem;font-weight:500;transition:all .2s}
+.gtab.active{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.4);color:var(--gold)}
+.grammar-lesson{display:none}
+.grammar-lesson.active{display:block;animation:rise .3s ease}
+.lesson-block{padding:24px;margin-bottom:14px}
+.lesson-block h3{font-family:'Instrument Serif',serif;font-size:1.2rem;margin-bottom:8px;color:var(--gold)}
+.lesson-block p{color:var(--mist);font-size:.88rem;line-height:1.7;margin-bottom:12px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.compare-card{padding:16px;border-radius:12px}
+.compare-card.english{background:rgba(224,92,110,.08);border:1px solid rgba(224,92,110,.2)}
+.compare-card.asl{background:rgba(46,196,182,.08);border:1px solid rgba(46,196,182,.2)}
+.compare-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px;font-weight:700}
+.compare-card.english .compare-label{color:var(--rose)}
+.compare-card.asl .compare-label{color:var(--teal)}
+.compare-text{font-size:1.05rem;font-weight:700;margin-bottom:5px}
+.compare-sub{font-size:.78rem;color:var(--fog);line-height:1.5}
+.asl-sentence{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.asl-word{background:var(--ink3);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:7px}
+.asl-word.topic{border-color:var(--gold);background:rgba(201,168,76,.1);color:var(--gold)}
+.asl-word.comment{border-color:var(--teal);background:rgba(46,196,182,.1);color:var(--teal)}
+.asl-word .wimg{width:32px;height:32px;background:rgba(255,255,255,.05);border-radius:5px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.asl-word .wimg img{width:26px;height:26px;object-fit:contain;filter:invert(1) brightness(.85)}
+.gquiz-q{font-weight:600;font-size:.95rem;margin-bottom:12px;line-height:1.5}
+.gquiz-opts{display:flex;flex-direction:column;gap:7px}
+.gquiz-opt{background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:12px 15px;cursor:pointer;font-size:.88rem;transition:all .2s;text-align:left;color:var(--text);font-family:'Outfit',sans-serif}
+.gquiz-opt:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.gquiz-opt.correct{border-color:var(--teal)!important;background:rgba(46,196,182,.08)!important;color:var(--teal)!important}
+.gquiz-opt.wrong{border-color:var(--rose)!important;background:rgba(224,92,110,.08)!important;color:var(--rose)!important}
+
+/* CONVO */
+.convo-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;height:calc(100vh - 130px)}
+.convo-main{display:flex;flex-direction:column}
+.convo-context{padding:15px 20px;border-radius:14px 14px 0 0;border:1px solid var(--line);border-bottom:none;background:var(--ink2);display:flex;align-items:center;gap:10px}
+.context-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#1a9e96);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.context-name{font-weight:700;font-size:.88rem}
+.context-status{font-size:.73rem;color:var(--teal)}
+.convo-msgs{flex:1;overflow-y:auto;padding:18px;border:1px solid var(--line);border-top:none;border-bottom:none;background:var(--ink);display:flex;flex-direction:column;gap:14px;min-height:0}
+.msg{max-width:75%;display:flex;flex-direction:column;gap:5px}
+.msg.partner{align-self:flex-start}
+.msg.user{align-self:flex-end}
+.msg-bubble{padding:12px 16px;border-radius:14px;font-size:.88rem;line-height:1.6}
+.msg.partner .msg-bubble{background:var(--ink2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.user .msg-bubble{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.25);border-bottom-right-radius:4px}
+.msg-signs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.msg-sign-chip{width:40px;height:40px;background:rgba(255,255,255,.05);border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--line)}
+.msg-sign-chip img{width:32px;height:32px;object-fit:contain;filter:invert(1) brightness(.85)}
+.msg-label{font-size:.68rem;color:var(--fog)}
+.msg-grammar-note{font-size:.77rem;color:var(--gold);background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);border-radius:7px;padding:7px 10px;margin-top:3px}
+.msg-grammar-note strong{display:block;margin-bottom:2px}
+.convo-input-wrap{border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;background:var(--ink2);padding:12px 14px}
+.convo-scenarios{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.scenario-chip{background:var(--ink3);border:1px solid var(--line);color:var(--fog);padding:4px 10px;border-radius:20px;font-size:.76rem;cursor:pointer;transition:all .2s}
+.scenario-chip:hover{border-color:var(--gold);color:var(--gold)}
+.convo-input-row{display:flex;gap:8px}
+.convo-input{flex:1;background:var(--ink);border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:.88rem;resize:none;outline:none;transition:border-color .2s}
+.convo-input:focus{border-color:var(--gold)}
+.convo-sidebar{display:flex;flex-direction:column;gap:12px}
+.sidebar-card{padding:16px}
+.vocab-chip-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.vocab-chip{display:flex;align-items:center;gap:5px;background:var(--ink3);border:1px solid var(--line);border-radius:7px;padding:4px 7px 4px 4px;font-size:.76rem;cursor:pointer;transition:all .2s}
+.vocab-chip:hover{border-color:var(--teal);color:var(--teal)}
+.vocab-chip img{width:26px;height:26px;object-fit:contain;filter:invert(1) brightness(.85);background:rgba(255,255,255,.04);border-radius:4px}
+.loading-dots{display:flex;gap:4px;align-items:center;padding:4px 0}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--fog);animation:blink 1.2s infinite}
+.loading-dots span:nth-child(2){animation-delay:.2s}
+.loading-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* FEED */
+.feed-filter{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.feed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.feed-card{padding:0;overflow:hidden}
+.feed-thumb{height:155px;background:var(--ink3);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.feed-thumb-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3.5rem}
+.feed-thumb-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(14,14,18,.9))}
+.feed-thumb-meta{position:absolute;bottom:9px;left:11px;right:11px;display:flex;align-items:center;justify-content:space-between}
+.feed-duration{font-size:.73rem;background:rgba(0,0,0,.6);padding:2px 7px;border-radius:20px}
+.feed-body{padding:14px}
+.feed-title{font-weight:700;font-size:.9rem;margin-bottom:4px;line-height:1.4}
+.feed-creator{font-size:.76rem;color:var(--fog);margin-bottom:7px}
+.feed-tags{display:flex;gap:4px;flex-wrap:wrap}
+.watch-btn{display:block;width:100%;padding:9px;text-align:center;background:var(--ink3);border:none;border-top:1px solid var(--line);color:var(--fog);cursor:pointer;font-family:'Outfit',sans-serif;font-size:.8rem;transition:all .2s}
+.watch-btn:hover{background:rgba(201,168,76,.08);color:var(--gold)}
+.watch-note{background:linear-gradient(135deg,rgba(46,196,182,.1),rgba(46,196,182,.04));border:1px solid rgba(46,196,182,.2);border-radius:var(--r);padding:16px 20px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start}
+.watch-note-icon{font-size:1.3rem;flex-shrink:0}
+.watch-note p{font-size:.85rem;color:var(--mist);line-height:1.65}
+.watch-note strong{color:var(--teal)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--ink2);border:1px solid var(--line);border-radius:20px;padding:32px;max-width:420px;width:90%;transform:scale(.94) translateY(14px);transition:transform .25s;text-align:center}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
+.modal-img{width:140px;height:140px;margin:0 auto 14px;background:rgba(255,255,255,.04);border-radius:16px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;animation:float 2.5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.modal-img img{width:116px;height:116px;object-fit:contain;filter:invert(1) brightness(.9)}
+.modal-letter{font-family:'Instrument Serif',serif;font-size:3rem;color:var(--gold)}
+.modal-desc{color:var(--fog);margin:8px 0 22px;font-size:.88rem;line-height:1.7}
+.modal-actions{display:flex;gap:10px;justify-content:center}
+
+@media(max-width:800px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{flex-direction:row;height:56px;width:100%;position:fixed;bottom:0;z-index:100;justify-content:center;padding:0 8px;border-right:none;border-top:1px solid var(--line)}
+  .logo-mark,.nav-spacer,.xp-pill{display:none}
+  .main{padding-bottom:64px}
+  .home-hero{grid-template-columns:1fr}
+  .modules-grid{grid-template-columns:1fr 1fr}
+  .compare-grid{grid-template-columns:1fr}
+  .convo-layout{grid-template-columns:1fr;height:auto}
+  .convo-sidebar{display:none}
+  .page{padding:22px 16px}
+}
+@media(max-width:500px){.modules-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="logo-mark">S</div>
+  <button class="nav-item active" data-page="home" onclick="nav('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home
+  </button>
+  <button class="nav-item" data-page="receptive" onclick="nav('receptive')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Watch
+  </button>
+  <button class="nav-item" data-page="grammar" onclick="nav('grammar')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Grammar
+  </button>
+  <button class="nav-item" data-page="convo" onclick="nav('convo')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Convo
+  </button>
+  <button class="nav-item" data-page="immersion" onclick="nav('immersion')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Immerse
+  </button>
+  <div class="nav-spacer"></div>
+  <div class="xp-pill">⚡<span id="xp">0</span></div>
+</aside>
+
+<main class="main">
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="home-hero">
+    <div>
+      <div class="label" style="margin-bottom:10px">Research-backed ASL learning</div>
+      <h1 class="h1">Learn ASL the way<br><i>Deaf people teach it</i></h1>
+      <p class="muted" style="font-size:.93rem;line-height:1.7;max-width:460px;margin-bottom:22px">Built around the 5 research-proven pillars of ASL fluency: receptive skills first, Deaf grammar (not English), cultural immersion, real conversation, and daily native-signer exposure.</p>
+      <button class="btn btn-gold" onclick="nav('receptive')">Begin Today's Drill →</button>
+    </div>
+    <div class="hero-right">
+      <div class="streak-card">
+        <div class="label" style="margin-bottom:4px">Day Streak 🔥</div>
+        <div class="streak-num" id="home-streak">1</div>
+        <div class="muted" style="font-size:.78rem">Keep it going</div>
+      </div>
+      <div class="stats-mini">
+        <div class="stat-mini"><div class="val" id="home-xp">0</div><div class="label">XP</div></div>
+        <div class="stat-mini"><div class="val" id="home-signs">0</div><div class="label">Signs</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="daily-banner">
+    <div class="banner-icon">🔬</div>
+    <div class="banner-text" id="research-tip"></div>
+  </div>
+  <div class="label" style="margin-bottom:12px">Your 5 Learning Pillars</div>
+  <div class="modules-grid">
+    <div class="card card-hover module-card" style="--mc:var(--teal)" onclick="nav('receptive')">
+      <span class="module-num">01</span><span class="module-icon">👁️</span>
+      <div class="module-title">Receptive Drills</div>
+      <div class="module-sub">Eyes before hands. Train visual recognition like a native watcher.</div>
+      <div class="pbar"><div class="pbar-fill" id="mod1-fill" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px"><span class="muted" style="font-size:.72rem" id="mod1-txt">0 drills</span><span class="tag tag-teal" style="font-size:.62rem">Pillar 2</span></div>
+    </div>
+    <div class="card card-hover module-card" style="--mc:var(--gold)" onclick="nav('grammar')">
+      <span class="module-num">02</span><span class="module-icon">🧠</span>
+      <div class="module-title">ASL Grammar</div>
+      <div class="module-sub">Topic-comment, spatial grammar, facial markers. Not English.</div>
+      <div class="pbar"><div class="pbar-fill" id="mod2-fill" style="width:0%;background:var(--gold)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px"><span class="muted" style="font-size:.72rem" id="mod2-txt">0/5 lessons</span><span class="tag tag-gold" style="font-size:.62rem">Pillar 3+4</span></div>
+    </div>
+    <div class="card card-hover module-card" style="--mc:var(--rose)" onclick="nav('convo')">
+      <span class="module-num">03</span><span class="module-icon">🤝</span>
+      <div class="module-title">AI Convo Partner</div>
+      <div class="module-sub">Simulated Deaf conversation with ASL grammar feedback.</div>
+      <div class="pbar"><div class="pbar-fill" style="width:0%;background:var(--rose)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px"><span class="muted" style="font-size:.72rem">Immersion sim</span><span class="tag tag-rose" style="font-size:.62rem">Pillar 1+4</span></div>
+    </div>
+    <div class="card card-hover module-card" style="--mc:#8b5cf6" onclick="nav('immersion')">
+      <span class="module-num">04</span><span class="module-icon">📺</span>
+      <div class="module-title">Deaf Content</div>
+      <div class="module-sub">Curated Deaf vloggers and ASL storytellers for daily watching.</div>
+      <div class="pbar"><div class="pbar-fill" style="width:100%;background:#8b5cf6"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px"><span class="muted" style="font-size:.72rem">Daily exposure</span><span class="tag" style="font-size:.62rem;background:rgba(139,92,246,.15);color:#8b5cf6;border:1px solid rgba(139,92,246,.3)">Pillar 5</span></div>
+    </div>
+    <div class="card card-hover module-card" style="--mc:var(--fog);grid-column:span 2" onclick="nav('receptive')">
+      <span class="module-num">05</span><span class="module-icon">🤚</span>
+      <div class="module-title">Alphabet & Fingerspelling</div>
+      <div class="module-sub">A tool, not the destination. Woven into every module — drills, conversations, grammar examples.</div>
+      <div class="pbar"><div class="pbar-fill" id="alpha-fill" style="width:0%"></div></div>
+      <div style="margin-top:5px"><span class="muted" style="font-size:.72rem" id="alpha-txt">0 / 26 letters learned</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEPTIVE -->
+<div class="page" id="page-receptive">
+  <div style="max-width:660px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px">
+      <button class="btn btn-ghost btn-sm" onclick="nav('home')">← Back</button>
+      <div><div style="font-family:'Instrument Serif',serif;font-size:1.4rem">Receptive Drills</div><div class="muted" style="font-size:.8rem">Watch first. Understand. Then produce.</div></div>
+    </div>
+    <div class="daily-banner" style="margin-bottom:18px">
+      <div class="banner-icon">👁️</div>
+      <div class="banner-text"><strong>Research says:</strong> Receptive skill (reading signs) must come before expressive skill (producing them). This module trains your visual system first — exactly how native signers learn.</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap">
+      <button class="btn btn-gold btn-sm" onclick="startDrill('letter')">Letter Recognition</button>
+      <button class="btn btn-ghost btn-sm" onclick="startDrill('word')">Fingerspelled Words</button>
+      <button class="btn btn-ghost btn-sm" onclick="startDrill('sequence')">ASL Sentence Structure</button>
+    </div>
+    <div id="drill-area">
+      <div class="card drill-card" style="color:var(--fog)"><div style="font-size:2.5rem;margin-bottom:14px">👆</div><div>Select a drill type above to begin</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAMMAR -->
+<div class="page" id="page-grammar">
+  <div style="max-width:740px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px">
+      <button class="btn btn-ghost btn-sm" onclick="nav('home')">← Back</button>
+      <div><div style="font-family:'Instrument Serif',serif;font-size:1.4rem">ASL Grammar</div><div class="muted" style="font-size:.8rem">ASL is not English with hands — it's a complete, distinct language</div></div>
+    </div>
+    <div class="grammar-tabs">
+      <button class="gtab active" onclick="showGrammar('structure',this)">Sentence Structure</button>
+      <button class="gtab" onclick="showGrammar('topiccomment',this)">Topic-Comment</button>
+      <button class="gtab" onclick="showGrammar('nmm',this)">Facial Grammar</button>
+      <button class="gtab" onclick="showGrammar('spatial',this)">Spatial Grammar</button>
+      <button class="gtab" onclick="showGrammar('negation',this)">Negation</button>
+      <button class="gtab" onclick="showGrammar('quiz',this)">Full Quiz</button>
+    </div>
+
+    <div class="grammar-lesson active" id="gl-structure">
+      <div class="card lesson-block">
+        <h3>ASL Does Not Follow English Word Order</h3>
+        <p>English uses Subject-Verb-Object (SVO). ASL primarily uses <strong style="color:var(--gold)">Topic-Comment</strong> and often <strong style="color:var(--gold)">Object-Subject-Verb (OSV)</strong> structures. This is the most critical and most overlooked aspect of achieving real fluency.</p>
+        <div class="compare-grid">
+          <div class="compare-card english"><div class="compare-label">English (SVO)</div><div class="compare-text">"I eat pizza"</div><div class="compare-sub">Subject → Verb → Object</div></div>
+          <div class="compare-card asl"><div class="compare-label">ASL (Topic-Comment)</div><div class="compare-text">PIZZA, ME EAT</div><div class="compare-sub">Topic established first. Eyebrows raise on PIZZA. Comment follows.</div></div>
+        </div>
+        <p>The comma represents a <strong style="color:var(--gold)">non-manual marker</strong> — a slight pause and eyebrow raise that marks the topic boundary. Grammar expressed on the face, not the hands.</p>
+      </div>
+      <div class="card lesson-block">
+        <h3>Time Signs Come First</h3>
+        <div class="compare-grid">
+          <div class="compare-card english"><div class="compare-label">English</div><div class="compare-text">"I went to the store yesterday"</div><div class="compare-sub">Time marker at the end</div></div>
+          <div class="compare-card asl"><div class="compare-label">ASL</div><div class="compare-text">YESTERDAY, STORE ME GO</div><div class="compare-sub">Time first. Sets temporal context for everything that follows.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grammar-lesson" id="gl-topiccomment">
+      <div class="card lesson-block">
+        <h3>Topic-Comment Structure</h3>
+        <p>The topic is <em>what</em> you're talking about. The comment is <em>what you say</em> about it. ASL establishes topic first with raised eyebrows, then delivers the comment.</p>
+        <div style="margin:14px 0">
+          <div class="label" style="margin-bottom:8px">Example: "That movie was boring"</div>
+          <div class="asl-sentence">
+            <div class="asl-word topic"><div class="wimg"><img src="https://fingerspelling.org/assets/letters/en-US/m.svg" alt="M"></div>MOVIE<span class="tag tag-gold" style="font-size:.6rem">TOPIC ↗</span></div>
+            <div class="asl-word" style="color:var(--fog)">→</div>
+            <div class="asl-word comment">BORING<span class="tag tag-teal" style="font-size:.6rem">COMMENT</span></div>
+          </div>
+          <p style="font-size:.8rem;color:var(--fog);margin-top:6px">Eyebrows raise on MOVIE. Neutral (or furrowed) for BORING.</p>
+        </div>
+        <div style="margin:14px 0">
+          <div class="label" style="margin-bottom:8px">Example: "Do you have a dog?"</div>
+          <div class="asl-sentence">
+            <div class="asl-word topic"><div class="wimg"><img src="https://fingerspelling.org/assets/letters/en-US/d.svg" alt="D"></div>DOG<span class="tag tag-gold" style="font-size:.6rem">TOPIC ↗</span></div>
+            <div class="asl-word" style="color:var(--fog)">→</div>
+            <div class="asl-word comment">YOU HAVE?</div>
+          </div>
+        </div>
+      </div>
+      <div class="card lesson-block" id="gquiz-tc">
+        <h3>Quick Check</h3>
+        <div class="gquiz-q">How would you sign "That cat is cute" in ASL topic-comment structure?</div>
+        <div class="gquiz-opts">
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','tc')">I THINK CAT CUTE</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'correct','tc')">CAT, CUTE ↗ (eyebrows raised on CAT)</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','tc')">CUTE CAT IS</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','tc')">IS CAT CUTE?</button>
+        </div>
+        <div class="feedback-bar" id="gfb-tc"></div>
+      </div>
+    </div>
+
+    <div class="grammar-lesson" id="gl-nmm">
+      <div class="card lesson-block">
+        <h3>Facial Expressions Are Grammar — Not Emotion</h3>
+        <p>This is the biggest misconception hearing learners have. In ASL, facial expressions are <strong style="color:var(--gold)">grammatical markers</strong>. They indicate questions, conditionals, topics, and intensity. Signing without them is like writing without punctuation.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0">
+          <div class="card" style="padding:14px;text-align:center;border-color:rgba(201,168,76,.3)"><div style="font-size:1.8rem;margin-bottom:7px">🤨</div><div style="font-weight:700;font-size:.82rem;margin-bottom:3px;color:var(--gold)">Furrowed Brows</div><div style="font-size:.75rem;color:var(--fog)">Wh- questions: WHO, WHAT, WHERE, WHY, HOW</div></div>
+          <div class="card" style="padding:14px;text-align:center;border-color:rgba(46,196,182,.3)"><div style="font-size:1.8rem;margin-bottom:7px">🙂</div><div style="font-weight:700;font-size:.82rem;margin-bottom:3px;color:var(--teal)">Raised Brows</div><div style="font-size:.75rem;color:var(--fog)">Yes/No questions and topic markers</div></div>
+          <div class="card" style="padding:14px;text-align:center;border-color:rgba(224,92,110,.3)"><div style="font-size:1.8rem;margin-bottom:7px">😤</div><div style="font-weight:700;font-size:.82rem;margin-bottom:3px;color:var(--rose)">Puffed Cheeks</div><div style="font-size:.75rem;color:var(--fog)">Intensity modifiers — "very small" vs "enormous"</div></div>
+        </div>
+      </div>
+      <div class="card lesson-block" id="gquiz-nmm">
+        <h3>Quick Check</h3>
+        <div class="gquiz-q">You want to ask "Where do you live?" What facial expression do you hold throughout?</div>
+        <div class="gquiz-opts">
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','nmm')">Raised eyebrows (yes/no expression)</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'correct','nmm')">Furrowed brows — wh- question marker</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','nmm')">Neutral face — emotions aren't grammar</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','nmm')">Smile throughout to seem friendly</button>
+        </div>
+        <div class="feedback-bar" id="gfb-nmm"></div>
+      </div>
+    </div>
+
+    <div class="grammar-lesson" id="gl-spatial">
+      <div class="card lesson-block">
+        <h3>Space Is Grammar</h3>
+        <p>ASL uses 3D space as grammatical structure. Nouns are assigned locations in signing space, and pointing back to those locations replaces pronouns. This is <strong style="color:var(--gold)">spatial grammar</strong>.</p>
+        <div style="background:var(--ink3);border-radius:10px;padding:18px;margin:14px 0;border:1px solid var(--line)">
+          <div class="label" style="margin-bottom:10px">Step by step:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.83rem;color:var(--mist);line-height:1.6">
+            <div><strong style="color:var(--text)">1. Establish JOHN</strong><br>Sign JOHN → point right. John lives at "right" in space.</div>
+            <div><strong style="color:var(--text)">2. Establish MARY</strong><br>Sign MARY → point left. Mary lives at "left" in space.</div>
+            <div><strong style="color:var(--text)">3. Use space as pronouns</strong><br>Point right = him (John). Point left = her (Mary).</div>
+            <div><strong style="color:var(--text)">4. Direct verbs through space</strong><br>Move verb right→left = "John gave Mary" — no names needed again.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card lesson-block" id="gquiz-sp">
+        <h3>Quick Check</h3>
+        <div class="gquiz-q">After establishing SARA at a location to your right, how do you sign "she" when referring to Sara?</div>
+        <div class="gquiz-opts">
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','sp')">Sign the word SHE or HER</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'correct','sp')">Point to the right — Sara's established location</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','sp')">Sign SARA again each time you reference her</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','sp')">Nod your head toward the right</button>
+        </div>
+        <div class="feedback-bar" id="gfb-sp"></div>
+      </div>
+    </div>
+
+    <div class="grammar-lesson" id="gl-negation">
+      <div class="card lesson-block">
+        <h3>Negation in ASL</h3>
+        <p>ASL negates with a negative sign (NOT, DON'T, CAN'T) or — more naturally — a <strong style="color:var(--gold)">head shake</strong> throughout the phrase. The head shake is a non-manual marker that negates everything it accompanies.</p>
+        <div class="compare-grid">
+          <div class="compare-card english"><div class="compare-label">English</div><div class="compare-text">"I don't like coffee"</div><div class="compare-sub">Inserts "don't" between subject and verb</div></div>
+          <div class="compare-card asl"><div class="compare-label">ASL method 1</div><div class="compare-text">COFFEE, ME LIKE NOT</div><div class="compare-sub">NOT comes after the verb. Topic-comment maintained.</div></div>
+        </div>
+        <div class="compare-grid" style="margin-top:10px">
+          <div class="compare-card asl" style="border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.06)"><div class="compare-label" style="color:var(--gold)">ASL method 2 (more natural)</div><div class="compare-text">COFFEE, ME LIKE 〰️</div><div class="compare-sub">Head shake accompanies ME LIKE. No NOT sign needed. Fluent signers use this.</div></div>
+          <div class="compare-card asl"><div class="compare-label">Incorporated negation</div><div class="compare-text">DON'T-WANT, DON'T-KNOW, CAN'T</div><div class="compare-sub">These are single signs with negation built in — more efficient than two separate signs.</div></div>
+        </div>
+      </div>
+      <div class="card lesson-block" id="gquiz-neg">
+        <h3>Quick Check</h3>
+        <div class="gquiz-q">What is the most natural way a fluent ASL signer negates a sentence?</div>
+        <div class="gquiz-opts">
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','neg')">Always use the NOT sign after the verb</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','neg')">Fingerspell N-O-T</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'correct','neg')">Shake the head throughout the negated phrase</button>
+          <button class="gquiz-opt" onclick="gquiz(this,'wrong','neg')">Place NOT at the start of the sentence</button>
+        </div>
+        <div class="feedback-bar" id="gfb-neg"></div>
+      </div>
+    </div>
+
+    <div class="grammar-lesson" id="gl-quiz">
+      <div class="card lesson-block">
+        <h3>Grammar Mastery Quiz</h3>
+        <p style="margin-bottom:18px">Test all ASL grammar concepts. No peeking at the lessons!</p>
+        <div id="gq-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONVO -->
+<div class="page" id="page-convo">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+    <button class="btn btn-ghost btn-sm" onclick="nav('home')">← Back</button>
+    <div><div style="font-family:'Instrument Serif',serif;font-size:1.4rem">AI Conversation Partner</div><div class="muted" style="font-size:.8rem">Simulated Deaf conversation — ASL grammar shown and corrected</div></div>
+  </div>
+  <div class="convo-layout">
+    <div class="convo-main">
+      <div class="convo-context">
+        <div class="context-avatar">🤟</div>
+        <div class="context-info"><div class="context-name">Jordan (Deaf, ASL Native)</div><div class="context-status">● Online — responds in ASL gloss + grammar notes</div></div>
+        <div style="margin-left:auto"><span class="tag tag-gold" id="scenario-tag">Casual chat</span></div>
+      </div>
+      <div class="convo-msgs" id="convo-msgs"></div>
+      <div class="convo-input-wrap">
+        <div class="label" style="margin-bottom:5px">Scenarios</div>
+        <div class="convo-scenarios">
+          <div class="scenario-chip" onclick="setScenario('casual')">😊 Casual</div>
+          <div class="scenario-chip" onclick="setScenario('introduce')">👋 Introductions</div>
+          <div class="scenario-chip" onclick="setScenario('directions')">🗺️ Directions</div>
+          <div class="scenario-chip" onclick="setScenario('restaurant')">🍽️ Restaurant</div>
+          <div class="scenario-chip" onclick="setScenario('deeperlife')">🌱 Deeper talk</div>
+        </div>
+        <div class="convo-input-row">
+          <textarea class="convo-input" id="convo-input" rows="2" placeholder="Type in English — AI responds with ASL gloss and grammar corrections..."></textarea>
+          <button class="btn btn-gold" onclick="sendMessage()" id="send-btn">Send</button>
+        </div>
+        <div style="font-size:.73rem;color:var(--fog);margin-top:5px">💡 Write naturally. The AI shows what it looks like in ASL structure and corrects your English-order thinking.</div>
+      </div>
+    </div>
+    <div class="convo-sidebar">
+      <div class="card sidebar-card">
+        <div class="label" style="margin-bottom:7px">Scenario</div>
+        <p class="muted" style="font-size:.8rem;line-height:1.5" id="scenario-desc">Chatting with a Deaf friend. Practice everyday conversation.</p>
+      </div>
+      <div class="card sidebar-card">
+        <div class="label" style="margin-bottom:5px">Key Signs</div>
+        <div class="vocab-chip-wrap" id="vocab-chips"></div>
+      </div>
+      <div class="card sidebar-card">
+        <div class="label" style="margin-bottom:7px">Grammar Reminders</div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:.78rem;color:var(--mist);line-height:1.5">
+          <div>📐 <strong style="color:var(--text)">Topic first</strong> — establish subject</div>
+          <div>⏰ <strong style="color:var(--text)">Time at start</strong></div>
+          <div>🙂 <strong style="color:var(--text)">Raise brows</strong> yes/no questions</div>
+          <div>🤨 <strong style="color:var(--text)">Furrow brows</strong> wh- questions</div>
+          <div>〰️ <strong style="color:var(--text)">Head shake</strong> = negation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMMERSION -->
+<div class="page" id="page-immersion">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+    <button class="btn btn-ghost btn-sm" onclick="nav('home')">← Back</button>
+    <div><div style="font-family:'Instrument Serif',serif;font-size:1.4rem">Deaf Content Library</div><div class="muted" style="font-size:.8rem">Watch fluent signers daily — research's #1 path to real fluency</div></div>
+  </div>
+  <div class="watch-note">
+    <div class="watch-note-icon">🔬</div>
+    <div><p><strong>Why this matters:</strong> ASLTA and Gallaudet research shows exposure to <strong>native Deaf signers</strong> is what produces true fluency. Aim for 20+ minutes of natural ASL daily. Build visual fluency — understanding signing at natural, unslowed speed.</p></div>
+  </div>
+  <div class="feed-filter">
+    <button class="btn btn-gold btn-sm" onclick="filterFeed('all',this)">All</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterFeed('beginner',this)">Beginner</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterFeed('intermediate',this)">Intermediate</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterFeed('culture',this)">Deaf Culture</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterFeed('stories',this)">ASL Stories</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterFeed('news',this)">Deaf News</button>
+  </div>
+  <div class="feed-grid" id="feed-grid"></div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="sign-modal">
+  <div class="modal">
+    <div class="modal-img"><img id="modal-img" src="" alt=""></div>
+    <div class="modal-letter" id="modal-letter"></div>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-gold" id="modal-learn-btn" onclick="markSign()">✓ Mark Learned</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const IMG=l=>`https://fingerspelling.org/assets/letters/en-US/${l.toLowerCase()}.svg`;
+let S=JSON.parse(localStorage.getItem('sf4')||'null')||{xp:0,streak:1,learned:[],gquizDone:{},drillScore:0,totalDrills:0};
+const save=()=>{try{localStorage.setItem('sf4',JSON.stringify(S))}catch{}};
+const addXP=n=>{S.xp+=n;document.getElementById('xp').textContent=S.xp;save()};
+
+function nav(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelector(`[data-page="${p}"]`)?.classList.add('active');
+  if(p==='home')renderHome();
+  if(p==='convo')initConvo();
+  if(p==='immersion')renderFeed('all');
+  if(p==='grammar')renderGrammarQuiz();
+}
+
+const researchTips=[
+  "<strong>Pillar 1 — Immersion:</strong> The fastest path to ASL fluency is deep immersion in the Deaf community. Every feature here simulates that digitally.",
+  "<strong>Pillar 2 — Receptive first:</strong> You must train your eyes to read signs before your hands can produce them fluently. Start every session with receptive drills.",
+  "<strong>Pillar 3 — Deaf instructors:</strong> ASL taught by hearing people not in the Deaf community produces 'classroom ASL' — correct but unnatural. Seek Deaf teachers and content.",
+  "<strong>Pillar 4 — ASL grammar ≠ English:</strong> Signing English word-order with ASL signs is the top beginner error. Topic-comment structure and non-manual markers define real fluency.",
+  "<strong>Pillar 5 — Daily exposure:</strong> ASLTA research: 5–10 hours/week consistently beats intensive infrequent study. Watch native signing every single day.",
+];
+
+function renderHome(){
+  document.getElementById('home-xp').textContent=S.xp;
+  document.getElementById('home-signs').textContent=S.learned.length;
+  document.getElementById('home-streak').textContent=S.streak;
+  document.getElementById('xp').textContent=S.xp;
+  const pct=Math.round(S.learned.length/26*100);
+  document.getElementById('alpha-fill').style.width=pct+'%';
+  document.getElementById('alpha-txt').textContent=S.learned.length+' / 26 letters learned';
+  const acc=S.totalDrills?Math.min(100,Math.round(S.drillScore/S.totalDrills*100)):0;
+  document.getElementById('mod1-fill').style.width=acc+'%';
+  document.getElementById('mod1-txt').textContent=S.totalDrills?S.totalDrills+' drills, '+acc+'% accuracy':'0 drills completed';
+  const gDone=Object.keys(S.gquizDone).length;
+  document.getElementById('mod2-fill').style.width=Math.round(gDone/5*100)+'%';
+  document.getElementById('mod2-txt').textContent=gDone+'/5 lessons completed';
+  document.getElementById('research-tip').innerHTML=researchTips[Math.floor(Date.now()/86400000)%researchTips.length];
+}
+
+const alphabet=[
+  {l:'A',d:'Fist with thumb resting on side of index finger. Compact A shape.'},
+  {l:'B',d:'Four fingers straight up together. Thumb tucked across palm.'},
+  {l:'C',d:'Curve all fingers and thumb in a C shape — like holding a cylinder.'},
+  {l:'D',d:'Index finger up, other three fingers and thumb form a circle on the side.'},
+  {l:'E',d:'All fingers bent toward palm, thumb tucked under. Claw shape.'},
+  {l:'F',d:'Index fingertip touches thumb. Other three fingers spread wide.'},
+  {l:'G',d:'Index finger and thumb point sideways. Like a sideways pointing gun.'},
+  {l:'H',d:'Index and middle fingers extended together, pointing sideways.'},
+  {l:'I',d:'Only pinky extended upward. All other fingers closed in fist.'},
+  {l:'J',d:'I handshape, then draw a J in the air with the pinky.'},
+  {l:'K',d:'V shape with thumb resting between index and middle fingers.'},
+  {l:'L',d:'Index finger points up, thumb extends out. Classic L shape.'},
+  {l:'M',d:'Three fingers fold over thumb.'},
+  {l:'N',d:'Two fingers fold over thumb.'},
+  {l:'O',d:'All fingers and thumb curve together to form a circle.'},
+  {l:'P',d:'K shape pointed downward.'},
+  {l:'Q',d:'G shape pointed downward.'},
+  {l:'R',d:'Middle finger crossed over index finger.'},
+  {l:'S',d:'Fist with thumb crossing in front of fingers.'},
+  {l:'T',d:'Thumb pokes between index and middle finger.'},
+  {l:'U',d:'Index and middle fingers up side by side.'},
+  {l:'V',d:'Index and middle fingers spread in V. Peace sign.'},
+  {l:'W',d:'Three middle fingers spread to form W.'},
+  {l:'X',d:'Index finger hooked/bent like a hook.'},
+  {l:'Y',d:'Pinky and thumb extended. Hang loose.'},
+  {l:'Z',d:'Index finger traces Z in the air. Movement letter.'},
+];
+
+const words=[
+  {word:'CAT',letters:['C','A','T']},{word:'DOG',letters:['D','O','G']},
+  {word:'BOOK',letters:['B','O','O','K']},{word:'HOME',letters:['H','O','M','E']},
+  {word:'LOVE',letters:['L','O','V','E']},{word:'WORK',letters:['W','O','R','K']},
+  {word:'FOOD',letters:['F','O','O','D']},{word:'NAME',letters:['N','A','M','E']},
+  {word:'SIGN',letters:['S','I','G','N']},{word:'HELP',letters:['H','E','L','P']},
+];
+
+const sequences=[
+  {asl:'PIZZA ME LIKE',english:'I like pizza',note:'Topic (PIZZA) → Comment (ME LIKE). Eyebrows up on PIZZA.'},
+  {asl:'YESTERDAY SCHOOL ME GO',english:'I went to school yesterday',note:'Time (YESTERDAY) comes first in ASL.'},
+  {asl:'CAT YOU HAVE?',english:'Do you have a cat?',note:'Topic (CAT) → Question with raised eyebrows throughout.'},
+  {asl:'COFFEE ME LIKE NOT',english:"I don't like coffee",note:'Negation (NOT) comes after the verb in ASL.'},
+  {asl:'YOUR NAME WHAT?',english:'What is your name?',note:'Wh-question (WHAT) at end, furrowed brows throughout.'},
+  {asl:'MOVIE BORING',english:'That movie was boring',note:'Topic-comment: MOVIE established, BORING is the comment.'},
+];
+
+let drillType=null,drillAnswered=false;
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+
+function startDrill(t){drillType=t;drillAnswered=false;renderDrill();}
+
+function renderDrill(){
+  const area=document.getElementById('drill-area');
+  if(drillType==='letter')renderLetterDrill(area);
+  else if(drillType==='word')renderWordDrill(area);
+  else renderSeqDrill(area);
+}
+
+function renderLetterDrill(area){
+  const c=alphabet[Math.floor(Math.random()*alphabet.length)];
+  const opts=shuffle([c,...shuffle(alphabet.filter(a=>a.l!==c.l)).slice(0,3)]);
+  drillAnswered=false;
+  area.innerHTML=`<div class="card drill-card"><div class="label" style="margin-bottom:14px">What letter is this handshape?</div><div style="width:130px;height:130px;margin:0 auto;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center"><img src="${IMG(c.l)}" style="width:110px;height:110px;object-fit:contain;filter:invert(1) brightness(.9)" alt="sign"></div></div><div class="drill-choices">${opts.map(o=>`<button class="drill-choice" onclick="answerL(this,'${o.l}','${c.l}')">${o.l}</button>`).join('')}</div><div class="feedback-bar" id="dfb"></div><div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" id="dnext" style="display:none" onclick="renderDrill()">Next →</button></div>`;
+}
+
+function renderWordDrill(area){
+  const w=words[Math.floor(Math.random()*words.length)];
+  const opts=shuffle([w,...shuffle(words.filter(x=>x.word!==w.word)).slice(0,3)]);
+  drillAnswered=false;
+  area.innerHTML=`<div class="card drill-card"><div class="label" style="margin-bottom:14px">What word is being fingerspelled?</div><div class="drill-sequence">${w.letters.map((l,i)=>`<div class="sign-frame"><div class="sign-img-box"><img src="${IMG(l)}" alt="${l}"></div><div class="sign-pos">${i+1}</div></div>`).join('')}</div></div><div class="drill-choices">${opts.map(o=>`<button class="drill-choice" onclick="answerW(this,'${o.word}','${w.word}')">${o.word}</button>`).join('')}</div><div class="feedback-bar" id="dfb"></div><div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" id="dnext" style="display:none" onclick="renderDrill()">Next →</button></div>`;
+}
+
+function renderSeqDrill(area){
+  const seq=sequences[Math.floor(Math.random()*sequences.length)];
+  const opts=shuffle([seq,...shuffle(sequences.filter(s=>s.asl!==seq.asl)).slice(0,3)]);
+  drillAnswered=false;
+  area.innerHTML=`<div class="card drill-card"><div class="label" style="margin-bottom:10px">What does this ASL phrase mean in English?</div><div style="font-size:1.3rem;font-weight:700;color:var(--gold);font-family:'Instrument Serif',serif;margin:14px 0">${seq.asl}</div><div style="font-size:.78rem;color:var(--fog)">Remember: ASL follows topic-comment and time-first structure</div></div><div class="drill-choices">${opts.map(o=>`<button class="drill-choice" onclick="answerS(this,\`${o.asl}\`,\`${seq.asl}\`)"><span style="font-size:.72rem;color:var(--fog);display:block;margin-bottom:3px">English meaning:</span>${o.english}</button>`).join('')}</div><div class="feedback-bar" id="dfb"></div><div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" id="dnext" style="display:none" onclick="renderDrill()">Next →</button></div>`;
+}
+
+function answerL(btn,sel,cor){
+  if(drillAnswered)return;drillAnswered=true;
+  document.querySelectorAll('.drill-choice').forEach(b=>b.disabled=true);
+  btn.classList.add(sel===cor?'correct':'wrong');
+  if(sel!==cor)document.querySelectorAll('.drill-choice').forEach(b=>{if(b.textContent===cor)b.classList.add('correct');});
+  if(sel===cor){if(!S.learned.includes(cor)){S.learned.push(cor);addXP(10);}else addXP(3);showDF(true,`✓ Correct! That's <strong>${cor}</strong>. ${alphabet.find(a=>a.l===cor).d}`);}
+  else showDF(false,`✗ That's <strong>${cor}</strong>. ${alphabet.find(a=>a.l===cor).d}`);
+  trackD(sel===cor);
+}
+function answerW(btn,sel,cor){
+  if(drillAnswered)return;drillAnswered=true;
+  document.querySelectorAll('.drill-choice').forEach(b=>b.disabled=true);
+  btn.classList.add(sel===cor?'correct':'wrong');
+  if(sel===cor){addXP(5);showDF(true,`✓ Correct! The signs spell <strong>${cor}</strong>.`);}
+  else showDF(false,`✗ The signs spelled <strong>${cor}</strong>. Practice each letter.`);
+  trackD(sel===cor);
+}
+function answerS(btn,sel,cor){
+  if(drillAnswered)return;drillAnswered=true;
+  const isC=sel===cor;
+  const q=sequences.find(s=>s.asl===cor);
+  document.querySelectorAll('.drill-choice').forEach(b=>b.disabled=true);
+  btn.classList.add(isC?'correct':'wrong');
+  if(isC){addXP(8);showDF(true,`✓ Correct!<br><span style="font-size:.8rem;display:block;margin-top:4px">Grammar: ${q.note}</span>`);}
+  else{const cBtn=Array.from(document.querySelectorAll('.drill-choice')).find(b=>b.querySelector('span+*')?.textContent===q.english||b.textContent.includes(q.english));if(cBtn)cBtn.classList.add('correct');showDF(false,`✗ Correct: <strong>${q.english}</strong><br><span style="font-size:.8rem;display:block;margin-top:4px">ASL: ${q.asl} — ${q.note}</span>`);}
+  trackD(isC);
+}
+function showDF(ok,html){
+  const fb=document.getElementById('dfb');fb.innerHTML=html;fb.className='feedback-bar show '+(ok?'ok':'bad');
+  document.getElementById('dnext').style.display='inline-flex';
+}
+function trackD(ok){S.totalDrills++;if(ok)S.drillScore++;save();}
+
+// GRAMMAR
+function showGrammar(tab,btn){
+  document.querySelectorAll('.grammar-lesson').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.gtab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('gl-'+tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+function gquiz(btn,answer,id){
+  if(btn.disabled)return;
+  document.querySelectorAll(`#gquiz-${id} .gquiz-opt`).forEach(b=>b.disabled=true);
+  btn.classList.add(answer==='correct'?'correct':'wrong');
+  if(answer!=='correct'){
+    document.querySelectorAll(`#gquiz-${id} .gquiz-opt`).forEach(b=>{if(b.getAttribute('onclick').includes("'correct'"))b.classList.add('correct');});
+  }
+  const fb=document.getElementById('gfb-'+id);
+  if(answer==='correct'){fb.textContent='✓ Correct! Great ASL grammar understanding.';fb.className='feedback-bar show ok';if(!S.gquizDone[id]){S.gquizDone[id]=true;addXP(15);}}
+  else{fb.textContent='✗ Review the lesson above — the correct answer is highlighted.';fb.className='feedback-bar show bad';}
+}
+
+const fullGrammarQs=[
+  {q:"How does ASL mark a topic in a sentence?",opts:["By using a special TOPIC sign","By raised eyebrows and a slight pause","By putting the topic at the end","By using the word 'ABOUT'"],correct:1},
+  {q:"In ASL, where do time references (yesterday, tomorrow) go?",opts:["At the end","After the subject","At the beginning","Anywhere — flexible"],correct:2},
+  {q:"How do you ask a yes/no question in ASL?",opts:["Sign YES/NO at the end","Raise eyebrows throughout","Furrow brows like wh- questions","Add a question mark handshape"],correct:1},
+  {q:"What is spatial grammar in ASL?",opts:["Using big movements to show importance","Assigning nouns to locations, using those locations as pronouns","Moving hands in shape of objects","Signing on dominant side only"],correct:1},
+  {q:"The most natural way to negate in fluent ASL is:",opts:["Sign NOT at start","Fingerspell N-O","Head shake throughout the negated phrase","Sign NOT before the verb"],correct:2},
+  {q:"'YESTERDAY STORE ME GO' demonstrates which rule?",opts:["Spatial grammar","Time signs come first","Topic-comment","Incorporated negation"],correct:1},
+];
+let gqIdx=0,gqScore=0;
+function renderGrammarQuiz(){gqIdx=0;gqScore=0;renderGQ();}
+function renderGQ(){
+  const c=document.getElementById('gq-container');
+  if(gqIdx>=fullGrammarQs.length){
+    c.innerHTML=`<div style="text-align:center;padding:16px"><div style="font-size:2.8rem;margin-bottom:10px">${gqScore>=5?'🏆':gqScore>=3?'👍':'📚'}</div><div style="font-family:'Instrument Serif',serif;font-size:1.7rem;margin-bottom:7px">${gqScore}/6 correct</div><div class="muted" style="margin-bottom:18px">${gqScore===6?'Perfect! Deep grammar understanding.':gqScore>=4?'Good grasp. Review missed lessons.':'Keep studying — grammar is the key to real fluency.'}</div><button class="btn btn-gold" onclick="gqIdx=0;gqScore=0;renderGQ()">Retry</button></div>`;
+    if(gqScore>=4)addXP(20);return;
+  }
+  const q=fullGrammarQs[gqIdx];
+  c.innerHTML=`<div class="label" style="margin-bottom:5px">Question ${gqIdx+1} of ${fullGrammarQs.length}</div><div class="gquiz-q">${q.q}</div><div class="gquiz-opts">${q.opts.map((o,i)=>`<button class="gquiz-opt" onclick="ansGQ(this,${i},${q.correct})">${o}</button>`).join('')}</div><div class="feedback-bar" id="gqfb"></div><div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" id="gqnext" style="display:none" onclick="gqIdx++;renderGQ()">Next →</button></div>`;
+}
+function ansGQ(btn,idx,correct){
+  document.querySelectorAll('#gq-container .gquiz-opt').forEach(b=>b.disabled=true);
+  btn.classList.add(idx===correct?'correct':'wrong');
+  if(idx!==correct)document.querySelectorAll('#gq-container .gquiz-opt')[correct].classList.add('correct');
+  const fb=document.getElementById('gqfb');
+  if(idx===correct){gqScore++;fb.textContent='✓ Correct!';fb.className='feedback-bar show ok';}
+  else{fb.textContent='✗ Study the grammar lessons.';fb.className='feedback-bar show bad';}
+  document.getElementById('gqnext').style.display='inline-flex';
+}
+
+// CONVO AI
+const scenarios={
+  casual:{label:'Casual chat',desc:'Chatting with a Deaf friend. Weekend plans, hobbies, opinions.',vocab:['H','I','G','O','L','K']},
+  introduce:{label:'Introductions',desc:"Meeting a Deaf person for the first time. Name, where from, what you do.",vocab:['N','A','M','E','W','H']},
+  directions:{label:'Asking directions',desc:"You're lost. Ask a Deaf person for directions.",vocab:['W','H','E','R','S','T']},
+  restaurant:{label:'At a restaurant',desc:"Ordering food and chatting with a Deaf dining companion.",vocab:['F','O','D','W','A','T']},
+  deeperlife:{label:'Deeper conversation',desc:"Family, work, values, life experiences.",vocab:['F','A','M','L','Y','W']},
+};
+let currentScenario='casual',convoHistory=[],convoInited=false;
+
+function setScenario(s){
+  currentScenario=s;const sc=scenarios[s];
+  document.getElementById('scenario-tag').textContent=sc.label;
+  document.getElementById('scenario-desc').textContent=sc.desc;
+  renderVocab(sc.vocab);convoHistory=[];
+  document.getElementById('convo-msgs').innerHTML='';
+  addPartnerMsg(true);
+}
+function renderVocab(letters){
+  document.getElementById('vocab-chips').innerHTML=letters.map(l=>`<div class="vocab-chip" onclick="openSign('${l}')"><img src="${IMG(l)}" alt="${l}"><span>${l}</span></div>`).join('');
+}
+function initConvo(){
+  if(convoInited)return;convoInited=true;
+  renderVocab(scenarios.casual.vocab);addPartnerMsg(true);
+}
+function addPartnerMsg(isGreet){
+  const msgs=document.getElementById('convo-msgs');
+  const loading=document.createElement('div');
+  loading.className='msg partner';
+  loading.innerHTML='<div class="msg-bubble"><div class="loading-dots"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(loading);msgs.scrollTop=msgs.scrollHeight;
+  const sc=scenarios[currentScenario];
+  const sys=`You are Jordan, a native Deaf ASL signer having a conversation with an ASL learner.
+Respond as JSON only (no markdown, no backticks):
+{"english":"your conversational response","asl_gloss":"ASL GLOSS IN CAPS","grammar_note":"one sentence about the ASL grammar shown or a correction","key_letters":["A","B"]}
+Scenario: ${sc.desc}
+Keep responses short (1-3 sentences). Show real ASL topic-comment structure in the gloss.
+${isGreet?'Start the conversation: greet them and ask one relevant question.':''}`;
+  const msgs2=[...convoHistory];
+  if(isGreet||msgs2.length===0)msgs2.push({role:'user',content:'[START]'});
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:msgs2})})
+  .then(r=>r.json()).then(data=>{
+    loading.remove();
+    let p;try{p=JSON.parse(data.content.filter(c=>c.type==='text').map(c=>c.text).join('').trim());}
+    catch{p={english:"Hey! Great to meet you. What brings you to learning ASL?",asl_gloss:"MEET-YOU NICE! ASL LEARN, WHY YOU?",grammar_note:"WHY comes at the end of wh- questions with furrowed brows.",key_letters:['M','Y','W']};}
+    renderPartnerBubble(p);convoHistory.push({role:'assistant',content:JSON.stringify(p)});
+  }).catch(()=>{
+    loading.remove();
+    renderPartnerBubble({english:"Hey! Nice to meet you! What's your name?",asl_gloss:"HEY! MEET-YOU NICE! YOUR NAME WHAT?",grammar_note:"In ASL, wh-words (WHAT) come at the end with furrowed brows throughout.",key_letters:['N','A','M']});
+  });
+}
+function renderPartnerBubble(p){
+  const msgs=document.getElementById('convo-msgs');
+  const el=document.createElement('div');el.className='msg partner';
+  const chips=p.key_letters?p.key_letters.slice(0,5).map(l=>`<div class="msg-sign-chip"><img src="${IMG(l)}" alt="${l}"></div>`).join(''):'';
+  el.innerHTML=`${chips?`<div class="msg-signs">${chips}</div>`:''}
+<div class="msg-bubble"><div style="font-size:.7rem;color:var(--fog);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">ASL Gloss</div><div style="font-weight:700;font-size:.92rem;margin-bottom:7px;color:var(--teal)">${p.asl_gloss||''}</div><div style="color:var(--mist);font-size:.86rem">${p.english||''}</div></div>
+${p.grammar_note?`<div class="msg-grammar-note"><strong>📐 Grammar note: </strong>${p.grammar_note}</div>`:''}
+<div class="msg-label">Jordan · Deaf, ASL Native</div>`;
+  msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+}
+function sendMessage(){
+  const inp=document.getElementById('convo-input');const text=inp.value.trim();if(!text)return;inp.value='';
+  const msgs=document.getElementById('convo-msgs');
+  const el=document.createElement('div');el.className='msg user';
+  el.innerHTML=`<div class="msg-bubble">${text}</div><div class="msg-label">You</div>`;
+  msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+  convoHistory.push({role:'user',content:text});addXP(2);addPartnerMsg(false);
+}
+document.getElementById('convo-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+
+// FEED
+const feedContent=[
+  {title:'The ASL Alphabet — Taught by a Deaf Teacher',creator:'Bill Vicars / Lifeprint',emoji:'🤚',level:'beginner',tags:['alphabet','fundamentals'],duration:'18 min',url:'https://www.youtube.com/results?search_query=ASL+alphabet+Bill+Vicars',cats:['beginner']},
+  {title:'A Day in My Life — Deaf Vlogger',creator:'Rikki Poynter',emoji:'📱',level:'intermediate',tags:['vlog','daily life','natural signing'],duration:'14 min',url:'https://www.youtube.com/results?search_query=Rikki+Poynter+Deaf+vlog',cats:['intermediate','culture']},
+  {title:'ASL Grammar Explained by a Deaf Linguist',creator:'Dr. Bill Vicars',emoji:'🧠',level:'beginner',tags:['grammar','non-manual markers'],duration:'22 min',url:'https://www.youtube.com/results?search_query=ASL+grammar+non+manual+markers',cats:['beginner']},
+  {title:'Deaf Culture 101 — What Hearing People Get Wrong',creator:'The Vich Family',emoji:'🌍',level:'beginner',tags:['deaf culture','community'],duration:'11 min',url:'https://www.youtube.com/results?search_query=deaf+culture+101',cats:['culture','beginner']},
+  {title:'ASL Storytelling — Classifiers in Action',creator:'Deaf storyteller',emoji:'🐻',level:'intermediate',tags:['storytelling','classifiers','natural ASL'],duration:'8 min',url:'https://www.youtube.com/results?search_query=ASL+storytelling+classifiers',cats:['stories','intermediate']},
+  {title:'Classifiers in ASL — Shape and Movement',creator:'ASL Meredith',emoji:'🔷',level:'intermediate',tags:['classifiers','spatial'],duration:'17 min',url:'https://www.youtube.com/results?search_query=ASL+classifiers',cats:['intermediate']},
+  {title:'Deaf News Weekly — Current Events in ASL',creator:'DeafNation',emoji:'📰',level:'intermediate',tags:['news','fast signing'],duration:'25 min',url:'https://www.youtube.com/results?search_query=Deaf+news+ASL',cats:['news','intermediate']},
+  {title:'100 Essential ASL Signs — Deaf Teacher',creator:'TJ Karlik',emoji:'✌️',level:'beginner',tags:['vocabulary','core signs'],duration:'32 min',url:'https://www.youtube.com/results?search_query=100+essential+ASL+signs+Deaf+teacher',cats:['beginner']},
+  {title:'"The Snowman" — Classic ASL Narrative',creator:'Gallaudet University',emoji:'⛄',level:'intermediate',tags:['narrative','spatial grammar'],duration:'5 min',url:'https://www.youtube.com/results?search_query=Gallaudet+ASL+snowman',cats:['stories']},
+  {title:'Deaf vs. Hearing: What I Wish You Knew',creator:'Nyle DiMarco Foundation',emoji:'❤️',level:'beginner',tags:['culture','awareness'],duration:'9 min',url:'https://www.youtube.com/results?search_query=Nyle+DiMarco+Deaf+culture',cats:['culture']},
+  {title:'Advanced ASL Conversation — Native Speed',creator:'Sign Duo',emoji:'💬',level:'advanced',tags:['immersion','receptive challenge'],duration:'20 min',url:'https://www.youtube.com/results?search_query=ASL+native+speed+conversation',cats:['intermediate']},
+  {title:'The Milan Conference — Deaf History',creator:'Deaf Heritage Project',emoji:'🏛️',level:'beginner',tags:['history','culture'],duration:'13 min',url:'https://www.youtube.com/results?search_query=Milan+conference+1880+Deaf+history',cats:['culture','news']},
+];
+function filterFeed(cat,btn){
+  document.querySelectorAll('.feed-filter button').forEach(b=>{b.className='btn btn-ghost btn-sm';});
+  btn.className='btn btn-gold btn-sm';renderFeed(cat);
+}
+function renderFeed(cat){
+  const items=cat==='all'?feedContent:feedContent.filter(f=>f.cats.includes(cat));
+  const lc={beginner:'var(--teal)',intermediate:'var(--gold)',advanced:'var(--rose)'};
+  document.getElementById('feed-grid').innerHTML=items.map(f=>`<div class="card feed-card"><div class="feed-thumb"><div class="feed-thumb-bg">${f.emoji}</div><div class="feed-thumb-overlay"></div><div class="feed-thumb-meta"><span class="feed-duration">⏱ ${f.duration}</span><span class="tag" style="font-size:.68rem;background:rgba(0,0,0,.5);color:${lc[f.level]||'var(--gold)'};border:1px solid ${lc[f.level]||'var(--gold)'}">${f.level}</span></div></div><div class="feed-body"><div class="feed-title">${f.title}</div><div class="feed-creator">by ${f.creator}</div><div class="feed-tags">${f.tags.map(t=>`<span class="tag tag-fog">${t}</span>`).join('')}</div></div><button class="watch-btn" onclick="window.open('${f.url}','_blank');addXP(5)">▶ Find on YouTube →</button></div>`).join('');
+}
+
+// MODAL
+let currentSign=null;
+function openSign(l){
+  const item=alphabet.find(a=>a.l===l);if(!item)return;currentSign=item;
+  document.getElementById('modal-img').src=IMG(l);
+  document.getElementById('modal-letter').textContent=l;
+  document.getElementById('modal-desc').textContent=item.d;
+  const learned=S.learned.includes(l);
+  document.getElementById('modal-learn-btn').textContent=learned?'✓ Learned':'✓ Mark Learned';
+  document.getElementById('modal-learn-btn').disabled=learned;
+  document.getElementById('sign-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('sign-modal').classList.remove('open');}
+function markSign(){if(!currentSign||S.learned.includes(currentSign.l))return;S.learned.push(currentSign.l);addXP(10);document.getElementById('modal-learn-btn').textContent='✓ Learned';document.getElementById('modal-learn-btn').disabled=true;save();}
+document.getElementById('sign-modal').addEventListener('click',e=>{if(e.target.id==='sign-modal')closeModal();});
+
+renderHome();renderFeed('all');
+</script>
+</body>
+</html>
